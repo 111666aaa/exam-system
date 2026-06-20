@@ -1,0 +1,2413 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>通用在线考试系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        success: '#00B42A',
+                        warning: '#FF7D00',
+                        danger: '#F53F3F',
+                        dark: '#1D2129',
+                        light: '#F2F3F5'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .card-shadow {
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            }
+            .question-card {
+                transition: all 0.3s ease;
+            }
+            .question-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- 导航栏 -->
+    <nav class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <i class="fa fa-graduation-cap text-primary text-2xl mr-3"></i>
+                    <h1 class="text-xl font-bold text-dark">通用在线考试系统</h1>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <button onclick="openDataImportModal()" class="px-3 py-2 border border-success text-success rounded-lg hover:bg-success/5 transition-colors flex items-center text-sm">
+                        <i class="fa fa-database mr-1"></i>导入数据
+                    </button>
+                    <button id="importBtn" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center">
+                        <i class="fa fa-upload mr-2"></i>导入题库
+                    </button>
+                    <!-- 用户登录区域 -->
+                    <div id="userArea" class="flex items-center space-x-2 ml-2">
+                        <button id="loginBtn" onclick="openLoginModal()" class="px-3 py-2 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors flex items-center text-sm">
+                            <i class="fa fa-user mr-1"></i>登录
+                        </button>
+                        <div id="userInfo" class="hidden flex items-center space-x-2">
+                            <span class="text-sm text-gray-600"><i class="fa fa-user-circle mr-1"></i><span id="usernameDisplay"></span></span>
+                            <button onclick="logout()" class="px-3 py-2 text-sm text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="退出登录">
+                                <i class="fa fa-sign-out"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主内容区 -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- 首页：学科选择 -->
+        <div id="homePage" class="space-y-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-dark mb-4">欢迎使用在线考试系统</h2>
+                <p class="text-gray-600 max-w-2xl mx-auto">支持多学科题库管理、在线答题、自动批改。导入你的题库即可开始考试，客观题自动评分，主观题提供参考答案。</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="subjectList">
+                <!-- 默认Java题库卡片 -->
+                <div class="bg-white rounded-xl card-shadow p-6 question-card">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mr-4">
+                            <i class="fa fa-code text-primary text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-dark">面向对象Java</h3>
+                            <p class="text-sm text-gray-500">3套完整试卷</p>
+                        </div>
+                    </div>
+                    <p class="text-gray-600 text-sm mb-4">包含单选题、填空题、判断题、简答题、综合题，覆盖Java面向对象核心知识点</p>
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs text-gray-500">题目总数：135题</span>
+                        <div class="flex space-x-2">
+                            <button onclick="deleteBank('java')" class="px-3 py-1 border border-danger text-danger rounded-lg hover:bg-danger/5 transition-colors text-sm">
+                                <i class="fa fa-trash mr-1"></i>删除
+                            </button>
+                            <button onclick="openGenerateModal('java')" class="px-3 py-1 border border-primary text-primary rounded-lg hover:bg-primary/5 transition-colors text-sm">
+                                <i class="fa fa-magic mr-1"></i>智能组卷
+                            </button>
+                            <button onclick="startExam('java')" class="text-primary font-medium hover:text-primary/80 flex items-center">
+                                开始考试 <i class="fa fa-arrow-right ml-1"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 添加题库卡片 -->
+                <div class="bg-white rounded-xl border-2 border-dashed border-gray-300 p-6 flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors min-h-[200px]" onclick="document.getElementById('importBtn').click()">
+                    <i class="fa fa-plus-circle text-gray-400 text-4xl mb-3"></i>
+                    <p class="text-gray-500">导入新题库</p>
+                    <p class="text-xs text-gray-400 mt-1">支持Word/JSON格式</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 考试页面 -->
+        <div id="examPage" class="hidden">
+            <div class="bg-white rounded-xl card-shadow p-4 mb-6 sticky top-20 z-40">
+                <div class="flex flex-wrap justify-between items-center gap-4">
+                    <div>
+                        <h3 class="font-semibold text-dark" id="examTitle">面向对象Java 试卷一</h3>
+                        <p class="text-sm text-gray-500">总分：100分 | 考试时间：不限</p>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <div class="flex items-center">
+                            <i class="fa fa-clock-o text-primary mr-2"></i>
+                            <span id="timer" class="font-mono text-lg">00:00:00</span>
+                        </div>
+                        <button onclick="backToHome()" class="px-4 py-2 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors font-medium">
+                            <i class="fa fa-sign-out mr-1"></i>退出考试
+                        </button>
+                        <button id="submitExam" class="px-6 py-2 bg-success text-white rounded-lg hover:bg-success/90 transition-colors font-medium">
+                            提交试卷
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-6" id="questionsContainer">
+                <!-- 题目会动态渲染在这里 -->
+            </div>
+        </div>
+
+        <!-- 结果页面 -->
+        <div id="resultPage" class="hidden">
+            <div class="bg-white rounded-xl card-shadow p-8 text-center mb-8">
+                <div class="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <i class="fa fa-check-circle text-primary text-4xl"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-dark mb-2">考试完成！</h2>
+                <p class="text-gray-600 mb-6">你的试卷已完成自动批改</p>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto">
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <p class="text-sm text-gray-500 mb-1">总分</p>
+                        <p class="text-2xl font-bold text-dark" id="totalScore">0</p>
+                    </div>
+                    <div class="bg-success/10 rounded-lg p-4">
+                        <p class="text-sm text-gray-500 mb-1">正确</p>
+                        <p class="text-2xl font-bold text-success" id="correctCount">0</p>
+                    </div>
+                    <div class="bg-danger/10 rounded-lg p-4">
+                        <p class="text-sm text-gray-500 mb-1">错误</p>
+                        <p class="text-2xl font-bold text-danger" id="wrongCount">0</p>
+                    </div>
+                    <div class="bg-warning/10 rounded-lg p-4">
+                        <p class="text-sm text-gray-500 mb-1">正确率</p>
+                        <p class="text-2xl font-bold text-warning" id="accuracy">0%</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl card-shadow p-6">
+                <h3 class="text-lg font-semibold text-dark mb-4">答题详情</h3>
+                <div class="space-y-4" id="resultDetails">
+                    <!-- 答题详情会动态渲染在这里 -->
+                </div>
+            </div>
+
+            <div class="mt-8 flex justify-center space-x-4">
+                <button onclick="backToHome()" class="px-6 py-3 bg-gray-200 text-dark rounded-lg hover:bg-gray-300 transition-colors font-medium">
+                    返回首页
+                </button>
+                <button onclick="startExam(currentSubject)" class="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-medium">
+                    重新考试
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- 智能组卷模态框 -->
+    <div id="generateModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-semibold text-dark">智能组卷</h3>
+                    <button onclick="closeGenerateModal()" class="text-gray-500 hover:text-gray-700">
+                        <i class="fa fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="p-6 space-y-6">
+                <!-- 题库统计 -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">题库题目统计</label>
+                    <div class="grid grid-cols-5 gap-3" id="bankStats">
+                        <div class="bg-gray-50 rounded-lg p-3 text-center">
+                            <p class="text-2xl font-bold text-primary" id="statSingle">0</p>
+                            <p class="text-xs text-gray-500">单选题</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-3 text-center">
+                            <p class="text-2xl font-bold text-success" id="statFill">0</p>
+                            <p class="text-xs text-gray-500">填空题</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-3 text-center">
+                            <p class="text-2xl font-bold text-warning" id="statJudge">0</p>
+                            <p class="text-xs text-gray-500">判断题</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-3 text-center">
+                            <p class="text-2xl font-bold text-danger" id="statShort">0</p>
+                            <p class="text-xs text-gray-500">简答题</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-3 text-center">
+                            <p class="text-2xl font-bold text-dark" id="statComprehensive">0</p>
+                            <p class="text-xs text-gray-500">综合题</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 题库统计（去重后全量有效题目） -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">题库题目统计（去重后全量有效）</label>
+                    <div class="grid grid-cols-5 gap-3">
+                        <div class="bg-gray-50 rounded-lg p-3 text-center">
+                            <p class="text-2xl font-bold text-primary" id="dedupSingle">0</p>
+                            <p class="text-xs text-gray-500">单选题</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-3 text-center">
+                            <p class="text-2xl font-bold text-success" id="dedupFill">0</p>
+                            <p class="text-xs text-gray-500">填空题</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-3 text-center">
+                            <p class="text-2xl font-bold text-warning" id="dedupJudge">0</p>
+                            <p class="text-xs text-gray-500">判断题</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-3 text-center">
+                            <p class="text-2xl font-bold text-danger" id="dedupShort">0</p>
+                            <p class="text-xs text-gray-500">简答题</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-3 text-center">
+                            <p class="text-2xl font-bold text-dark" id="dedupComprehensive">0</p>
+                            <p class="text-xs text-gray-500">综合题</p>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2">全量有效题目总数：<span id="dedupTotal" class="font-medium text-primary">0</span> 题</p>
+                </div>
+
+                <!-- 题型分布设置 -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-3">每套试卷题型分布（可手动修改）</label>
+                    <!-- 自动分配按钮 -->
+                    <div class="mb-3">
+                        <button onclick="autoAllocateQuestions()" class="px-3 py-1.5 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors text-sm flex items-center">
+                            <i class="fa fa-magic mr-1"></i>自动计算最优分配
+                        </button>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm">单选题（每题2分）</span>
+                            <div class="flex items-center">
+                                <input type="number" id="genSingle" min="0" value="15" class="w-20 border border-gray-300 rounded-lg p-2 text-center focus:ring-2 focus:ring-primary focus:border-primary outline-none" oninput="calculateExpectedScore()">
+                                <span class="ml-2 text-sm text-gray-500">题</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm">填空题（每题2分）</span>
+                            <div class="flex items-center">
+                                <input type="number" id="genFill" min="0" value="10" class="w-20 border border-gray-300 rounded-lg p-2 text-center focus:ring-2 focus:ring-primary focus:border-primary outline-none" oninput="calculateExpectedScore()">
+                                <span class="ml-2 text-sm text-gray-500">题</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm">判断题（每题1分）</span>
+                            <div class="flex items-center">
+                                <input type="number" id="genJudge" min="0" value="10" class="w-20 border border-gray-300 rounded-lg p-2 text-center focus:ring-2 focus:ring-primary focus:border-primary outline-none" oninput="calculateExpectedScore()">
+                                <span class="ml-2 text-sm text-gray-500">题</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm">简答题（每题5分）</span>
+                            <div class="flex items-center">
+                                <input type="number" id="genShort" min="0" value="4" class="w-20 border border-gray-300 rounded-lg p-2 text-center focus:ring-2 focus:ring-primary focus:border-primary outline-none" oninput="calculateExpectedScore()">
+                                <span class="ml-2 text-sm text-gray-500">题</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm">综合题（每题10分）</span>
+                            <div class="flex items-center">
+                                <input type="number" id="genComprehensive" min="0" value="2" class="w-20 border border-gray-300 rounded-lg p-2 text-center focus:ring-2 focus:ring-primary focus:border-primary outline-none" oninput="calculateExpectedScore()">
+                                <span class="ml-2 text-sm text-gray-500">题</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 生成套数 -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">生成试卷套数</label>
+                    <div class="flex items-center">
+                        <input type="number" id="genCount" min="1" max="10" value="3" class="w-20 border border-gray-300 rounded-lg p-2 text-center focus:ring-2 focus:ring-primary focus:border-primary outline-none">
+                        <span class="ml-2 text-sm text-gray-500">套（最多10套）</span>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2">预计总分：<span id="expectedScore" class="font-medium text-primary">100</span> 分</p>
+                </div>
+
+                <div class="flex justify-end space-x-3">
+                    <button onclick="closeGenerateModal()" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                        取消
+                    </button>
+                    <button onclick="generatePapers()" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+                        生成试卷
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 导入题库模态框 -->
+    <div id="importModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-semibold text-dark">导入题库</h3>
+                    <button onclick="closeImportModal()" class="text-gray-500 hover:text-gray-700">
+                        <i class="fa fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="p-6 space-y-6">
+                <!-- 标签页切换 -->
+                <div class="flex border-b">
+                    <button id="tabJson" class="px-4 py-2 font-medium text-primary border-b-2 border-primary" onclick="switchTab('json')">JSON导入</button>
+                    <button id="tabWord" class="px-4 py-2 font-medium text-gray-500 hover:text-gray-700" onclick="switchTab('word')">Word文档导入</button>
+                </div>
+
+                <!-- JSON导入面板 -->
+                <div id="jsonPanel">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">题库格式说明</label>
+                        <div class="bg-gray-50 rounded-lg p-4 text-sm text-gray-600">
+                            <p class="mb-2">请使用以下JSON格式导入题库：</p>
+                            <pre class="bg-gray-800 text-green-400 p-3 rounded text-xs overflow-x-auto">
+{
+  "subject": "学科名称",
+  "papers": [
+    {
+      "title": "试卷名称",
+      "totalScore": 100,
+      "questions": [
+        {
+          "type": "single", // single单选, fill填空, judge判断, short简答, comprehensive综合
+          "question": "题目内容",
+          "options": ["A. 选项1", "B. 选项2"], // 仅单选需要
+          "answer": "正确答案",
+          "score": 2
+        }
+      ]
+    }
+  ]
+}</pre>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">粘贴题库JSON</label>
+                        <textarea id="jsonInput" class="w-full h-48 border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-primary focus:border-primary outline-none" placeholder="请粘贴JSON格式的题库内容..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Word文档导入面板 -->
+                <div id="wordPanel" class="hidden">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Word格式要求</label>
+                        <div class="bg-gray-50 rounded-lg p-4 text-sm text-gray-600">
+                            <ul class="list-disc pl-5 space-y-1">
+                                <li>包含标准题型标题：单选题、填空题、判断题、简答题、综合题</li>
+                                <li>题目以数字编号开头（1.、2.、3.）</li>
+                                <li>单选题选项以A.、B.、C.、D.开头</li>
+                                <li>答案以"答案："或"参考答案："开头</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">学科名称</label>
+                            <input type="text" id="wordSubject" class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-primary focus:border-primary outline-none" placeholder="例如：高等数学">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">试卷名称</label>
+                            <input type="text" id="wordPaper" class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-primary focus:border-primary outline-none" placeholder="例如：期末试卷一">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">选择Word文档</label>
+                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-primary transition-colors cursor-pointer" onclick="document.getElementById('wordFile').click()">
+                            <i class="fa fa-file-word-o text-gray-400 text-4xl mb-3"></i>
+                            <p class="text-gray-600" id="fileStatus">点击选择.docx文件</p>
+                            <p class="text-xs text-gray-400 mt-1">支持.docx格式</p>
+                        </div>
+                        <input type="file" id="wordFile" accept=".docx" class="hidden" onchange="handleWordFile(this)">
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-3">
+                    <button onclick="closeImportModal()" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                        取消
+                    </button>
+                    <button id="importBtn" onclick="doImport()" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+                        导入
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 删除确认模态框 -->
+    <div id="deleteModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl max-w-md w-full">
+            <div class="p-6 border-b">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-semibold text-dark">确认删除</h3>
+                    <button onclick="closeDeleteModal()" class="text-gray-500 hover:text-gray-700">
+                        <i class="fa fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="p-6">
+                <div class="flex items-start mb-4">
+                    <div class="w-12 h-12 bg-danger/10 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
+                        <i class="fa fa-exclamation-triangle text-danger text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-dark font-medium mb-1">确定要删除该题库吗？</p>
+                        <p class="text-sm text-gray-500" id="deleteBankName">题库名称</p>
+                    </div>
+                </div>
+                <p class="text-sm text-gray-600 bg-gray-50 rounded-lg p-3">
+                    <i class="fa fa-info-circle text-warning mr-1"></i>
+                    删除后将无法恢复。默认Java题库删除后刷新页面可恢复，自定义题库删除后将永久删除。
+                </p>
+            </div>
+            <div class="p-6 border-t flex justify-end space-x-3">
+                <button onclick="closeDeleteModal()" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                    取消
+                </button>
+                <button onclick="confirmDelete()" class="px-4 py-2 bg-danger text-white rounded-lg hover:bg-danger/90 transition-colors">
+                    <i class="fa fa-trash mr-1"></i>确认删除
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 退出登录确认模态框 -->
+    <div id="logoutModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl max-w-md w-full">
+            <div class="p-6 border-b">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-semibold text-dark">确认退出</h3>
+                    <button onclick="closeLogoutModal()" class="text-gray-500 hover:text-gray-700">
+                        <i class="fa fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="p-6">
+                <div class="flex items-start mb-4">
+                    <div class="w-12 h-12 bg-warning/10 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
+                        <i class="fa fa-sign-out text-warning text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-dark font-medium mb-1">确定要退出登录吗？</p>
+                        <p class="text-sm text-gray-500">退出后需要重新登录才能使用云端数据</p>
+                    </div>
+                </div>
+            </div>
+            <div class="p-6 border-t flex justify-end space-x-3">
+                <button onclick="closeLogoutModal()" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                    取消
+                </button>
+                <button onclick="confirmLogout()" class="px-4 py-2 bg-warning text-white rounded-lg hover:bg-warning/90 transition-colors">
+                    <i class="fa fa-sign-out mr-1"></i>确认退出
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 提交试卷确认模态框 -->
+    <div id="submitModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl max-w-md w-full">
+            <div class="p-6 border-b">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-semibold text-dark">确认提交</h3>
+                    <button onclick="closeSubmitModal()" class="text-gray-500 hover:text-gray-700">
+                        <i class="fa fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="p-6">
+                <div class="flex items-start mb-4">
+                    <div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
+                        <i class="fa fa-check-circle text-primary text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-dark font-medium mb-1">确定要提交试卷吗？</p>
+                        <p class="text-sm text-gray-500">提交后将无法修改答案，系统将自动批改</p>
+                    </div>
+                </div>
+                <p class="text-sm text-gray-600 bg-gray-50 rounded-lg p-3">
+                    <i class="fa fa-info-circle text-primary mr-1"></i>
+                    请确认所有题目都已作答，提交后将立即显示成绩。
+                </p>
+            </div>
+            <div class="p-6 border-t flex justify-end space-x-3">
+                <button onclick="closeSubmitModal()" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                    继续答题
+                </button>
+                <button onclick="confirmSubmit()" class="px-4 py-2 bg-success text-white rounded-lg hover:bg-success/90 transition-colors">
+                    <i class="fa fa-check mr-1"></i>确认提交
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 登录/注册模态框 -->
+    <div id="loginModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl max-w-md w-full">
+            <div class="p-6 border-b">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-semibold text-dark">用户登录</h3>
+                    <button onclick="closeLoginModal()" class="text-gray-500 hover:text-gray-700">
+                        <i class="fa fa-times text-xl"></i>
+                    </button>
+                </div>
+                <!-- 标签页切换 -->
+                <div class="flex mt-4 border-b">
+                    <button id="loginTab" onclick="switchAuthTab('login')" class="px-4 py-2 text-primary border-b-2 border-primary font-medium">
+                        登录
+                    </button>
+                    <button id="registerTab" onclick="switchAuthTab('register')" class="px-4 py-2 text-gray-500 hover:text-gray-700">
+                        注册
+                    </button>
+                </div>
+            </div>
+            <div class="p-6 space-y-4">
+                <!-- 登录表单 -->
+                <div id="loginForm">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">用户名</label>
+                        <input type="text" id="loginUsername" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary" placeholder="请输入用户名">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">密码</label>
+                        <input type="password" id="loginPassword" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary" placeholder="请输入密码" onkeypress="if(event.key==='Enter')doLogin()">
+                    </div>
+                    <button onclick="doLogin()" class="w-full py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+                        登录
+                    </button>
+                </div>
+                <!-- 注册表单 -->
+                <div id="registerForm" class="hidden">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">用户名</label>
+                        <input type="text" id="registerUsername" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary" placeholder="至少3个字符">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">密码</label>
+                        <input type="password" id="registerPassword" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary" placeholder="至少6个字符">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">确认密码</label>
+                        <input type="password" id="registerPassword2" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary" placeholder="再次输入密码" onkeypress="if(event.key==='Enter')doRegister()">
+                    </div>
+                    <button onclick="doRegister()" class="w-full py-2 bg-success text-white rounded-lg hover:bg-success/90 transition-colors">
+                        注册
+                    </button>
+                </div>
+                <p class="text-xs text-gray-500 text-center">
+                    <i class="fa fa-info-circle mr-1"></i>登录后可在多设备间同步题库数据
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 数据导入模态框 -->
+    <div id="dataImportModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl max-w-lg w-full">
+            <div class="p-6 border-b">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-semibold text-dark">导入数据</h3>
+                    <button onclick="closeDataImportModal()" class="text-gray-500 hover:text-gray-700">
+                        <i class="fa fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="p-6 space-y-4">
+                <div class="bg-gray-50 rounded-lg p-4 text-sm text-gray-600">
+                    <p class="mb-2"><i class="fa fa-info-circle text-primary mr-1"></i>导入说明：</p>
+                    <ul class="list-disc pl-5 space-y-1">
+                        <li>选择之前导出的JSON数据文件</li>
+                        <li>导入后会合并到现有题库中</li>
+                        <li>相同学科的题库会被覆盖</li>
+                    </ul>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">选择数据文件</label>
+                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-success transition-colors cursor-pointer" onclick="document.getElementById('dataFile').click()">
+                        <i class="fa fa-file-text-o text-gray-400 text-4xl mb-3"></i>
+                        <p class="text-gray-600" id="dataFileStatus">点击选择JSON文件</p>
+                        <p class="text-xs text-gray-400 mt-1">支持.json格式</p>
+                    </div>
+                    <input type="file" id="dataFile" accept=".json" class="hidden" onchange="handleDataFile(this)">
+                </div>
+            </div>
+            <div class="p-6 border-t flex justify-end space-x-3">
+                <button onclick="closeDataImportModal()" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                    取消
+                </button>
+                <button onclick="doDataImport()" class="px-4 py-2 bg-success text-white rounded-lg hover:bg-success/90 transition-colors">
+                    <i class="fa fa-upload mr-1"></i>导入
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== 后端API配置 ==========
+        const API_BASE = '/api';
+        let backendAvailable = false; // 后端是否可用
+        
+        // ========== 用户系统配置 ==========
+        const USER_STORAGE_KEY = 'exam_system_user';
+        let currentUser = null; // 当前登录用户
+        let authToken = null; // 用户认证token
+        
+        // 打开登录模态框
+        function openLoginModal() {
+            document.getElementById('loginModal').classList.remove('hidden');
+            switchAuthTab('login');
+        }
+        
+        // 关闭登录模态框
+        function closeLoginModal() {
+            document.getElementById('loginModal').classList.add('hidden');
+            // 清空输入框
+            document.getElementById('loginUsername').value = '';
+            document.getElementById('loginPassword').value = '';
+            document.getElementById('registerUsername').value = '';
+            document.getElementById('registerPassword').value = '';
+            document.getElementById('registerPassword2').value = '';
+        }
+        
+        // 切换登录/注册标签页
+        function switchAuthTab(tab) {
+            const loginTab = document.getElementById('loginTab');
+            const registerTab = document.getElementById('registerTab');
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            
+            if (tab === 'login') {
+                loginTab.classList.add('text-primary', 'border-b-2', 'border-primary', 'font-medium');
+                loginTab.classList.remove('text-gray-500');
+                registerTab.classList.remove('text-primary', 'border-b-2', 'border-primary', 'font-medium');
+                registerTab.classList.add('text-gray-500');
+                loginForm.classList.remove('hidden');
+                registerForm.classList.add('hidden');
+            } else {
+                registerTab.classList.add('text-primary', 'border-b-2', 'border-primary', 'font-medium');
+                registerTab.classList.remove('text-gray-500');
+                loginTab.classList.remove('text-primary', 'border-b-2', 'border-primary', 'font-medium');
+                loginTab.classList.add('text-gray-500');
+                registerForm.classList.remove('hidden');
+                loginForm.classList.add('hidden');
+            }
+        }
+        
+        // 更新用户UI显示
+        function updateUserUI() {
+            const loginBtn = document.getElementById('loginBtn');
+            const userInfo = document.getElementById('userInfo');
+            const usernameDisplay = document.getElementById('usernameDisplay');
+            
+            if (currentUser && authToken) {
+                loginBtn.classList.add('hidden');
+                userInfo.classList.remove('hidden');
+                usernameDisplay.textContent = currentUser.username;
+            } else {
+                loginBtn.classList.remove('hidden');
+                userInfo.classList.add('hidden');
+            }
+        }
+        
+        // 保存用户信息到本地存储
+        function saveUserToStorage() {
+            if (currentUser && authToken) {
+                localStorage.setItem(USER_STORAGE_KEY, JSON.stringify({
+                    user: currentUser,
+                    token: authToken
+                }));
+            }
+        }
+        
+        // 从本地存储加载用户信息
+        function loadUserFromStorage() {
+            try {
+                const data = localStorage.getItem(USER_STORAGE_KEY);
+                if (data) {
+                    const parsed = JSON.parse(data);
+                    currentUser = parsed.user;
+                    authToken = parsed.token;
+                    updateUserUI();
+                    return true;
+                }
+            } catch (e) {
+                console.error('加载用户信息失败:', e);
+            }
+            return false;
+        }
+        
+        // 用户登录
+        async function doLogin() {
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            
+            if (!username || !password) {
+                alert('请输入用户名和密码');
+                return;
+            }
+            
+            try {
+                const response = await fetch(API_BASE + '/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentUser = { username: data.data.username };
+                    authToken = data.data.token;
+                    saveUserToStorage();
+                    updateUserUI();
+                    closeLoginModal();
+                    alert('登录成功！');
+                    // 登录成功后从后端加载数据
+                    loadBanksFromBackend();
+                } else {
+                    alert('登录失败：' + data.message);
+                }
+            } catch (e) {
+                alert('登录失败：' + e.message);
+            }
+        }
+        
+        // 用户注册
+        async function doRegister() {
+            const username = document.getElementById('registerUsername').value.trim();
+            const password = document.getElementById('registerPassword').value;
+            const password2 = document.getElementById('registerPassword2').value;
+            
+            if (!username || !password) {
+                alert('请输入用户名和密码');
+                return;
+            }
+            
+            if (username.length < 3) {
+                alert('用户名至少3个字符');
+                return;
+            }
+            
+            if (password.length < 6) {
+                alert('密码至少6个字符');
+                return;
+            }
+            
+            if (password !== password2) {
+                alert('两次输入的密码不一致');
+                return;
+            }
+            
+            try {
+                const response = await fetch(API_BASE + '/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('注册成功！请登录');
+                    switchAuthTab('login');
+                    document.getElementById('loginUsername').value = username;
+                } else {
+                    alert('注册失败：' + data.message);
+                }
+            } catch (e) {
+                alert('注册失败：' + e.message);
+            }
+        }
+        
+        // 退出登录
+        function logout() {
+            // 弹出确认模态框
+            document.getElementById('logoutModal').classList.remove('hidden');
+        }
+        
+        function closeLogoutModal() {
+            document.getElementById('logoutModal').classList.add('hidden');
+        }
+        
+        function confirmLogout() {
+            closeLogoutModal();
+            
+            currentUser = null;
+            authToken = null;
+            localStorage.removeItem(USER_STORAGE_KEY);
+            
+            // 重置题库数据，只保留默认Java题库
+            questionBanks = [defaultBank];
+            
+            // 删除所有自定义题库的卡片（保留默认Java题库和添加卡片）
+            const cards = document.querySelectorAll('.question-card');
+            cards.forEach(card => {
+                const title = card.querySelector('h3');
+                if (title && title.textContent !== '面向对象Java') {
+                    card.remove();
+                }
+            });
+            
+            // 重新执行去重统计
+            deduplicateAllQuestions();
+            
+            // 保存到localStorage（清除自定义题库）
+            saveBanksToStorage();
+            
+            updateUserUI();
+            alert('已退出登录');
+        }
+        
+        // 检测后端是否可用
+        async function checkBackend() {
+            try {
+                const response = await fetch(API_BASE + '/health');
+                const data = await response.json();
+                backendAvailable = data.success;
+                return backendAvailable;
+            } catch (e) {
+                backendAvailable = false;
+                return false;
+            }
+        }
+        
+        // 从后端获取所有题库
+        async function fetchBanksFromBackend() {
+            try {
+                const headers = { 'Content-Type': 'application/json' };
+                if (authToken) {
+                    headers['Authorization'] = 'Bearer ' + authToken;
+                }
+                
+                const response = await fetch(API_BASE + '/banks', { headers });
+                const data = await response.json();
+                
+                // 如果未授权，清除用户信息
+                if (response.status === 401) {
+                    currentUser = null;
+                    authToken = null;
+                    localStorage.removeItem(USER_STORAGE_KEY);
+                    updateUserUI();
+                    return [];
+                }
+                
+                if (data.success) {
+                    return data.data;
+                }
+                return [];
+            } catch (e) {
+                console.error('从后端获取题库失败:', e);
+                return [];
+            }
+        }
+        
+        // 保存题库到后端
+        async function saveBankToBackend(bank) {
+            try {
+                const headers = { 'Content-Type': 'application/json' };
+                if (authToken) {
+                    headers['Authorization'] = 'Bearer ' + authToken;
+                }
+                
+                const response = await fetch(API_BASE + '/banks', {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(bank)
+                });
+                const data = await response.json();
+                
+                // 如果未授权，清除用户信息
+                if (response.status === 401) {
+                    currentUser = null;
+                    authToken = null;
+                    localStorage.removeItem(USER_STORAGE_KEY);
+                    updateUserUI();
+                    return false;
+                }
+                
+                return data.success;
+            } catch (e) {
+                console.error('保存题库到后端失败:', e);
+                return false;
+            }
+        }
+        
+        // 从后端删除题库
+        async function deleteBankFromBackend(subject) {
+            try {
+                const headers = {};
+                if (authToken) {
+                    headers['Authorization'] = 'Bearer ' + authToken;
+                }
+                
+                const response = await fetch(API_BASE + '/banks/' + encodeURIComponent(subject), {
+                    method: 'DELETE',
+                    headers: headers
+                });
+                const data = await response.json();
+                
+                // 如果未授权，清除用户信息
+                if (response.status === 401) {
+                    currentUser = null;
+                    authToken = null;
+                    localStorage.removeItem(USER_STORAGE_KEY);
+                    updateUserUI();
+                    return false;
+                }
+                
+                return data.success;
+            } catch (e) {
+                console.error('从后端删除题库失败:', e);
+                return false;
+            }
+        }
+        
+        // 批量保存题库到后端
+        async function batchSaveBanksToBackend(banks) {
+            try {
+                const headers = { 'Content-Type': 'application/json' };
+                if (authToken) {
+                    headers['Authorization'] = 'Bearer ' + authToken;
+                }
+                
+                const response = await fetch(API_BASE + '/banks/batch', {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(banks)
+                });
+                const data = await response.json();
+                
+                // 如果未授权，清除用户信息
+                if (response.status === 401) {
+                    currentUser = null;
+                    authToken = null;
+                    localStorage.removeItem(USER_STORAGE_KEY);
+                    updateUserUI();
+                    return false;
+                }
+                
+                return data.success;
+            } catch (e) {
+                console.error('批量保存题库到后端失败:', e);
+                return false;
+            }
+        }
+
+        // 默认Java题库
+        const defaultBank = {
+            "subject": "面向对象Java",
+            "papers": [
+                {
+                    "title": "试卷一",
+                    "totalScore": 100,
+                    "questions": [
+                        // 单选题
+                        {"type":"single","question":"1、Java中，若子类重写了父类的方法，当父类引用指向子类对象时调用该方法，会执行哪类的方法？","options":["A. 父类的方法","B. 子类的方法","C. 编译报错，无法执行","D. 随机执行父类或子类方法"],"answer":"B","score":2},
+                        {"type":"single","question":"2、下列关于Java多态的说法中,错误的是()","options":["A. 多态通过继承、覆盖和向上转型实现","B. 多态可以提高代码的可扩展性","C. 编译时多态通过方法重载实现","D. 运行时多态通过方法重载实现"],"answer":"D","score":2},
+                        {"type":"single","question":"3、下列哪一项是 Java 语言的特点","options":["A. 指针操作灵活，可直接访问内存","B. 平台无关性，一次编写到处运行","C. 不支持面向对象编程","D. 必须手动管理内存释放"],"answer":"B","score":2},
+                        {"type":"single","question":"4、以下关于构造方法的说法正确的是","options":["A. 构造方法必须有返回值","B. 构造方法名必须和类名相同","C. 一个类只能有一个构造方法","D. 构造方法不能被重载"],"answer":"B","score":2},
+                        {"type":"single","question":"5、Java 程序运行时所依赖的核心运行环境是","options":["A. JDK","B. JRE","C. JVM","D. javac"],"answer":"B","score":2},
+                        {"type":"single","question":"6、在 Java 中，关于 final 关键字的说法正确的是","options":["A. final 类可以被继承","B. final 方法可以被子类重写","C. final 变量一旦赋值后不能再修改","D. final 修饰的引用变量可以随意重新指向其他对象"],"answer":"C","score":2},
+                        {"type":"single","question":"7、下列用于主动抛出异常的关键字是","options":["A. throws","B. throw","C. finally","D. final"],"answer":"B","score":2},
+                        {"type":"single","question":"8、多个 catch 语句块的排列顺序通常应为","options":["A. 父类异常在前，子类异常在后","B. 子类异常在前，父类异常在后","C. 任意顺序均可","D. 必须按字母顺序排列"],"answer":"B","score":2},
+                        {"type":"single","question":"9、TreeSet底层使用的数据结构是","options":["A. 哈希表","B. 链表","C. 二叉树","D. 数组"],"answer":"C","score":2},
+                        {"type":"single","question":"10、下列集合中，查询效率最高的是","options":["A.LinkedList","B.ArrayList","C.HashSet","D.TreeSet"],"answer":"C","score":2},
+                        {"type":"single","question":"11、实现封装时，成员变量通常使用的访问修饰符是","options":["A. public","B. protected","C. private","D. default"],"answer":"C","score":2},
+                        {"type":"single","question":"12、Java中，关键字extends的作用是","options":["A. 实现接口","B. 定义类","C. 继承父类","D. 修饰成员变量"],"answer":"C","score":2},
+                        {"type":"single","question":"13、现有类A和接口 B，以下表示A实现B的是","options":["A. class A extends B","B. class B implements A","C. class A implements B","D. class B extends A"],"answer":"C","score":2},
+                        {"type":"single","question":"14、以下抽象类的定义中，错误的是","options":["A.abstract class Demo1{  }","B.abstract class Demo2{ public abstract String fun(String a);}","C. abstract class Demo3{public String fun(){ return \"测试\"; }}","D. abstract class Demo4{ public static final String TEST= \"测试\"; abstract void fun(){}}"],"answer":"D","score":2},
+                        {"type":"single","question":"15、关于接口，以下说法错误的是","options":["A. 接口中的变量默认是 public static final 的","B. 接口中的方法默认是 public abstract 的","C. 一个类可以实现多个接口","D. 接口中可以有构造方法"],"answer":"D","score":2},
+                        // 填空题
+                        {"type":"fill","question":"1、________是指不同类的对象在调用同一个方法时表现出的多种不同行为。","answer":"多态","score":2},
+                        {"type":"fill","question":"2、将子类对象转换为父类类型的过程称为________转型，这种转换是自动完成的。","answer":"向上","score":2},
+                        {"type":"fill","question":"3、Java 源文件的扩展名是 ________。","answer":".java","score":2},
+                        {"type":"fill","question":"4、使用 ________ 关键字可以在一个构造方法中调用另一个构造方法。","answer":"this","score":2},
+                        {"type":"fill","question":"5、JVM 的全称是 ________。","answer":"Java虚拟机","score":2},
+                        {"type":"fill","question":"6、没有名字、通常在创建对象时直接定义并使用的内部类叫作 ________。","answer":"匿名内部类","score":2},
+                        {"type":"fill","question":"7、Java 中所有异常和错误类的共同父类是 ________。","answer":"Throwable","score":2},
+                        {"type":"fill","question":"8、Set接口的特点是元素________且不可重复。","answer":"无序","score":2},
+                        {"type":"fill","question":"9、实现封装时，用于获取成员变量值的方法称为________方法。","answer":"getter","score":2},
+                        {"type":"fill","question":"10、Java只支持________继承，即一个子类只能有一个直接父类。","answer":"单","score":2},
+                        // 判断题
+                        {"type":"judge","question":"1、向上转型是指将子类对象赋值给父类引用，这是实现多态的必要前提之一，且向上转型会导致子类特有方法无法直接调用。","answer":"正确","score":1},
+                        {"type":"judge","question":"2、成员变量有默认初始值，局部变量也有默认初始值。","answer":"错误","score":1},
+                        {"type":"judge","question":"3、static 方法中可以直接访问非 static 成员变量。","answer":"错误","score":1},
+                        {"type":"judge","question":"4、被 final 修饰的类不能有子类。","answer":"正确","score":1},
+                        {"type":"judge","question":"5、throw 和 throws 在程序中的作用完全相同。","answer":"错误","score":1},
+                        {"type":"judge","question":"6、TreeSet中的元素会自动按照自然顺序排序。","answer":"正确","score":1},
+                        {"type":"judge","question":"7、Collection接口是Map接口的父接口。","answer":"错误","score":1},
+                        {"type":"judge","question":"8、子类可以继承父类的protected修饰的成员，并可以在子类中直接访问。","answer":"正确","score":1},
+                        {"type":"judge","question":"9、final修饰的方法，既不能被重写，也不能被继承。","answer":"错误","score":1},
+                        {"type":"judge","question":"10、接口可以实例化对象。","answer":"错误","score":1},
+                        // 简答题
+                        {"type":"short","question":"1、请简述面向对象思想中\"类\"与\"对象\"的关系。","answer":"类是对一类具有相同属性和行为的事物的抽象描述，是对象的模板；对象是类的具体实例，是类的实际存在。一个类可以创建多个对象，每个对象都拥有类中定义的属性和方法。","score":5},
+                        {"type":"short","question":"2、简述\"封装\"的含义，并说明封装在面向对象编程中的优势。","answer":"封装是指将对象的属性和实现细节隐藏起来，只对外提供公共的访问接口。优势：1. 提高代码安全性，防止外部随意修改内部状态；2. 降低耦合度，内部实现修改不影响外部使用；3. 提高代码复用性和可维护性。","score":5},
+                        {"type":"short","question":"3、简述 throw 与 throws 的区别。","answer":"1. throw用于方法内部，主动抛出异常对象；throws用于方法声明处，声明该方法可能抛出的异常类型。2. throw抛出一个具体的异常实例；throws可以声明多个异常类型。3. throw表示一定会抛出异常；throws表示可能抛出异常，由调用者处理。","score":5},
+                        {"type":"short","question":"4、什么是抽象类，抽象类的特点有哪些？","answer":"抽象类是用abstract修饰的类，不能被实例化。特点：1. 可以包含抽象方法（只有声明没有实现的方法）和普通方法；2. 子类继承抽象类必须实现所有抽象方法，否则子类也必须是抽象类；3. 可以有构造方法，供子类调用；4. 可以包含成员变量和普通方法，实现代码复用。","score":5},
+                        // 综合题
+                        {"type":"comprehensive","question":"1、现有接口CalcArea：public interface CalcArea {double getArea();}(1)定义圆类Circle并实现接口CalcArea，成员变量radius，带参构造初始化半径。(2)定义矩形类Rectangle实现CalcArea，成员变量长length、宽width，带参构造初始化长宽。(3)补全Tester类代码，实现图形数组总面积求和。","answer":"(1) class Circle implements CalcArea { private double radius; public Circle(double radius) { this.radius = radius; } public double getArea() { return Math.PI * radius * radius; } }\n(2) class Rectangle implements CalcArea { private double length, width; public Rectangle(double l, double w) { length=l; width=w; } public double getArea() { return length*width; } }\n(3) ① CalcArea[] ② CalcArea[] shapes ③ for(CalcArea s : shapes) sum += s.getArea();","score":10},
+                        {"type":"comprehensive","question":"2、设计员工薪资管理系统：（1）定义抽象类 Employee，protected属性：id、name、baseSalary，抽象方法calculateSalary()。（2）Manager类继承Employee，新增bonus，薪资=基本工资+奖金。（3）Salesman类继承Employee，新增sales、rate，薪资=基本工资+销售额×提成。（4）测试类使用父类引用创建经理、销售员对象，输出两人薪资。","answer":"(1) abstract class Employee { protected int id; protected String name; protected double baseSalary; public abstract double calculateSalary(); }\n(2) class Manager extends Employee { private double bonus; public double calculateSalary() { return baseSalary + bonus; } }\n(3) class Salesman extends Employee { private double sales, rate; public double calculateSalary() { return baseSalary + sales * rate; } }\n(4) public class Test { public static void main(String[] args) { Employee m = new Manager(); Employee s = new Salesman(); System.out.println(m.calculateSalary()); System.out.println(s.calculateSalary()); } }","score":10}
+                    ]
+                }
+            ]
+        };
+
+        // 全局变量
+        let questionBanks = [defaultBank];
+        let currentSubject = 'java';
+        let currentPaper = null;
+        let userAnswers = {};
+        let timerInterval = null;
+        let startTime = null;
+
+        // 去重后的全量题库（135道有效题目统计来源）
+        let deduplicatedQuestions = {
+            single: [],
+            fill: [],
+            judge: [],
+            short: [],
+            comprehensive: []
+        };
+
+        // ========== localStorage 持久化 ==========
+        const STORAGE_KEY = 'exam_system_banks';
+
+        function saveBanksToStorage() {
+            try {
+                // 只保存自定义题库，不保存默认的Java题库
+                const customBanks = questionBanks.filter(b => b !== defaultBank);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(customBanks));
+                
+                // 如果后端可用，异步同步到后端
+                if (backendAvailable) {
+                    batchSaveBanksToBackend(customBanks).catch(e => {
+                        console.log('同步到后端失败:', e);
+                    });
+                }
+            } catch (e) {
+                console.log('保存题库失败:', e);
+            }
+        }
+
+        function loadBanksFromStorage() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    const customBanks = JSON.parse(saved);
+                    customBanks.forEach(bank => {
+                        // 检查是否已存在
+                        const exists = questionBanks.find(b => b.subject === bank.subject);
+                        if (!exists) {
+                            questionBanks.push(bank);
+                            // 添加到页面显示
+                            addBankCardToPage(bank);
+                        }
+                    });
+                }
+                
+                // 异步从后端加载数据
+                loadBanksFromBackend();
+            } catch (e) {
+                console.log('加载题库失败:', e);
+            }
+        }
+        
+        // 从后端加载题库数据
+        async function loadBanksFromBackend() {
+            try {
+                // 先检测后端是否可用
+                const available = await checkBackend();
+                if (!available) {
+                    console.log('后端不可用，使用本地存储');
+                    return;
+                }
+                
+                console.log('后端可用，正在从服务器加载题库...');
+                
+                const banks = await fetchBanksFromBackend();
+                
+                // 先清除所有自定义题库（只保留默认Java题库）
+                questionBanks = [defaultBank];
+                
+                // 清除所有自定义题库的DOM卡片
+                const cards = document.querySelectorAll('.question-card');
+                cards.forEach(card => {
+                    const title = card.querySelector('h3');
+                    if (title && title.textContent !== '面向对象Java') {
+                        card.remove();
+                    }
+                });
+                
+                if (banks && banks.length > 0) {
+                    let addedCount = 0;
+                    
+                    banks.forEach(bank => {
+                        // 跳过默认Java题库
+                        if (bank.subject === defaultBank.subject) return;
+                        
+                        // 添加题库
+                        questionBanks.push(bank);
+                        addBankCardToPage(bank);
+                        addedCount++;
+                    });
+                    
+                    // 重新执行去重统计
+                    deduplicateAllQuestions();
+                    
+                    // 更新本地存储
+                    const customBanks = questionBanks.filter(b => b !== defaultBank);
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(customBanks));
+                    
+                    console.log(`从后端加载完成：共加载 ${addedCount} 个题库`);
+                } else {
+                    // 后端没有题库，重新执行去重统计
+                    deduplicateAllQuestions();
+                    
+                    // 更新本地存储（清除自定义题库）
+                    localStorage.removeItem(STORAGE_KEY);
+                    
+                    console.log('从后端加载完成：该用户暂无自定义题库');
+                }
+            } catch (e) {
+                console.log('从后端加载题库失败:', e);
+            }
+        }
+
+        function addBankCardToPage(bank) {
+            const subjectList = document.getElementById('subjectList');
+            const newCard = document.createElement('div');
+            newCard.className = 'bg-white rounded-xl card-shadow p-6 question-card';
+            newCard.innerHTML = `
+                <div class="flex items-center mb-4">
+                    <div class="w-12 h-12 bg-success/10 rounded-lg flex items-center justify-center mr-4">
+                        <i class="fa fa-book text-success text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-dark">${bank.subject}</h3>
+                        <p class="text-sm text-gray-500">${bank.papers.length}套试卷</p>
+                    </div>
+                </div>
+                <p class="text-gray-600 text-sm mb-4">导入的自定义题库，支持在线答题和自动批改</p>
+                <div class="flex justify-between items-center">
+                    <span class="text-xs text-gray-500">题目总数：${bank.papers.reduce((sum, p) => sum + p.questions.length, 0)}题</span>
+                    <div class="flex space-x-2">
+                        <button onclick="deleteBank('${bank.subject}')" class="px-3 py-1 border border-danger text-danger rounded-lg hover:bg-danger/5 transition-colors text-sm">
+                            <i class="fa fa-trash mr-1"></i>删除
+                        </button>
+                        <button onclick="openGenerateModal('${bank.subject}')" class="px-3 py-1 border border-primary text-primary rounded-lg hover:bg-primary/5 transition-colors text-sm">
+                            <i class="fa fa-magic mr-1"></i>智能组卷
+                        </button>
+                        <button onclick="startExam('${bank.subject}')" class="text-primary font-medium hover:text-primary/80 flex items-center">
+                            开始考试 <i class="fa fa-arrow-right ml-1"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            // 插入到添加卡片前面
+            subjectList.insertBefore(newCard, subjectList.lastElementChild);
+        }
+
+        // ========== 删除题库功能 ==========
+        let currentDeleteSubject = null;
+
+        // 删除题库（入口函数）
+        function deleteBank(subject) {
+            currentDeleteSubject = subject;
+            openDeleteModal(subject);
+        }
+
+        // 打开删除确认模态框
+        function openDeleteModal(subject) {
+            const bank = subject === 'java' ? defaultBank : questionBanks.find(b => b.subject === subject);
+            if (bank) {
+                document.getElementById('deleteBankName').textContent = bank.subject;
+            }
+            document.getElementById('deleteModal').classList.remove('hidden');
+        }
+
+        // 关闭删除确认模态框
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').classList.add('hidden');
+            currentDeleteSubject = null;
+        }
+
+        // 确认删除
+        function confirmDelete() {
+            if (!currentDeleteSubject) return;
+
+            const subject = currentDeleteSubject;
+
+            // 从 questionBanks 数组中移除
+            const index = questionBanks.findIndex(b => b.subject === subject);
+            if (index !== -1) {
+                questionBanks.splice(index, 1);
+            }
+
+            // 从 DOM 中移除卡片
+            const cards = document.querySelectorAll('.question-card');
+            cards.forEach(card => {
+                const title = card.querySelector('h3');
+                if (title && title.textContent === (subject === 'java' ? '面向对象Java' : subject)) {
+                    card.remove();
+                }
+            });
+
+            // 保存到 localStorage（自定义题库会被移除）
+            saveBanksToStorage();
+
+            // 重新执行去重统计
+            deduplicateAllQuestions();
+
+            // 同步到后端（异步，不阻塞）
+            if (backendAvailable && subject !== 'java') {
+                deleteBankFromBackend(subject);
+            }
+
+            // 关闭模态框
+            closeDeleteModal();
+
+            // 提示删除成功
+            alert('题库删除成功！');
+        }
+
+        // ========== 核心功能：全量题库去重 ==========
+        function deduplicateAllQuestions() {
+            deduplicatedQuestions = { single: [], fill: [], judge: [], short: [], comprehensive: [] };
+            let contentSet = new Set();
+
+            questionBanks.forEach(bank => {
+                bank.papers.forEach(paper => {
+                    paper.questions.forEach(q => {
+                        const pureText = q.question.replace(/^\d+[、.．]\s*/, '').trim();
+                        if (!contentSet.has(pureText)) {
+                            contentSet.add(pureText);
+                            deduplicatedQuestions[q.type].push({...q, pureContent: pureText});
+                        }
+                    });
+                });
+            });
+
+            updateBankStats();
+        }
+
+        // ========== 核心功能：更新题库统计面板 ==========
+        function updateBankStats() {
+            document.getElementById('dedupSingle').textContent = deduplicatedQuestions.single.length;
+            document.getElementById('dedupFill').textContent = deduplicatedQuestions.fill.length;
+            document.getElementById('dedupJudge').textContent = deduplicatedQuestions.judge.length;
+            document.getElementById('dedupShort').textContent = deduplicatedQuestions.short.length;
+            document.getElementById('dedupComprehensive').textContent = deduplicatedQuestions.comprehensive.length;
+
+            const total =
+                deduplicatedQuestions.single.length +
+                deduplicatedQuestions.fill.length +
+                deduplicatedQuestions.judge.length +
+                deduplicatedQuestions.short.length +
+                deduplicatedQuestions.comprehensive.length;
+            document.getElementById('dedupTotal').textContent = total;
+            calculateExpectedScore();
+        }
+
+        // ========== 核心功能：自动分配最优题数 ==========
+        function autoAllocateQuestions() {
+            const scoreMap = { single: 2, fill: 2, judge: 1, short: 5, comprehensive: 10 };
+            const targetScore = 100;
+            
+            // 获取当前选中的题库
+            const bank = currentGenerateSubject === 'java' ? defaultBank : questionBanks.find(b => b.subject === currentGenerateSubject);
+            const allQuestions = bank ? bank.papers.flatMap(p => p.questions) : [];
+            
+            // 统计当前题库各题型去重后的数量
+            const contentSet = new Set();
+            const maxCounts = { single: 0, fill: 0, judge: 0, short: 0, comprehensive: 0 };
+            allQuestions.forEach(q => {
+                const pureText = q.question.replace(/^\d+[、.．]\s*/, '').trim();
+                if (!contentSet.has(pureText)) {
+                    contentSet.add(pureText);
+                    if (maxCounts[q.type] !== undefined) {
+                        maxCounts[q.type]++;
+                    }
+                }
+            });
+
+            let alloc = { single: 0, fill: 0, judge: 0, short: 0, comprehensive: 0 };
+
+            // 综合题最多2道
+            alloc.comprehensive = Math.min(maxCounts.comprehensive, 2);
+            let remain = targetScore - alloc.comprehensive * scoreMap.comprehensive;
+
+            // 简答题最多4道
+            alloc.short = Math.min(maxCounts.short, Math.floor(remain / scoreMap.short), 4);
+            remain -= alloc.short * scoreMap.short;
+
+            // 单选题最多15道
+            alloc.single = Math.min(maxCounts.single, Math.floor(remain / scoreMap.single), 15);
+            remain -= alloc.single * scoreMap.single;
+
+            // 填空题最多10道
+            alloc.fill = Math.min(maxCounts.fill, Math.floor(remain / scoreMap.fill), 10);
+            remain -= alloc.fill * scoreMap.fill;
+
+            // 判断题补齐剩余分数
+            alloc.judge = Math.min(maxCounts.judge, remain);
+            remain -= alloc.judge * scoreMap.judge;
+
+            // 剩余分数微调
+            if (remain > 0) {
+                if (alloc.single < maxCounts.single) {
+                    const add = Math.min(Math.floor(remain / 2), maxCounts.single - alloc.single);
+                    alloc.single += add;
+                    remain -= add * 2;
+                }
+                if (remain > 0 && alloc.fill < maxCounts.fill) {
+                    const add = Math.min(Math.floor(remain / 2), maxCounts.fill - alloc.fill);
+                    alloc.fill += add;
+                    remain -= add * 2;
+                }
+                if (remain > 0 && alloc.judge < maxCounts.judge) {
+                    alloc.judge += Math.min(remain, maxCounts.judge - alloc.judge);
+                }
+            }
+
+            // 回填到输入框
+            document.getElementById('genSingle').value = alloc.single;
+            document.getElementById('genFill').value = alloc.fill;
+            document.getElementById('genJudge').value = alloc.judge;
+            document.getElementById('genShort').value = alloc.short;
+            document.getElementById('genComprehensive').value = alloc.comprehensive;
+
+            calculateExpectedScore();
+        }
+
+        // ========== 核心功能：实时计算总分 ==========
+        function calculateExpectedScore() {
+            const single = parseInt(document.getElementById('genSingle').value) || 0;
+            const fill = parseInt(document.getElementById('genFill').value) || 0;
+            const judge = parseInt(document.getElementById('genJudge').value) || 0;
+            const short = parseInt(document.getElementById('genShort').value) || 0;
+            const comp = parseInt(document.getElementById('genComprehensive').value) || 0;
+            const total = single * 2 + fill * 2 + judge * 1 + short * 5 + comp * 10;
+            document.getElementById('expectedScore').textContent = total;
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 导入按钮事件
+            document.getElementById('importBtn').addEventListener('click', openImportModal);
+            // 提交试卷事件
+            document.getElementById('submitExam').addEventListener('click', submitExam);
+            
+            // 加载用户信息
+            loadUserFromStorage();
+            
+            // 加载保存的题库
+            loadBanksFromStorage();
+            
+            // 检测后端是否可用
+            checkBackend().then(function(available) {
+                if (available && authToken) {
+                    // 如果后端可用且已登录，从后端加载数据
+                    loadBanksFromBackend();
+                }
+            });
+            
+            // 页面加载立即执行一次去重统计
+            deduplicateAllQuestions();
+        });
+
+        // 开始考试
+        function startExam(subject) {
+            currentSubject = subject;
+            const bank = subject === 'java' ? defaultBank : questionBanks.find(b => b.subject === subject);
+            currentPaper = bank.papers[0]; // 默认第一套试卷
+            userAnswers = {};
+            
+            // 切换页面
+            document.getElementById('homePage').classList.add('hidden');
+            document.getElementById('examPage').classList.remove('hidden');
+            document.getElementById('resultPage').classList.add('hidden');
+            
+            // 设置标题
+            document.getElementById('examTitle').textContent = `${bank.subject} ${currentPaper.title}`;
+            
+            // 渲染题目
+            renderQuestions();
+            
+            // 开始计时
+            startTimer();
+        }
+
+        // 渲染题目
+        function renderQuestions() {
+            const container = document.getElementById('questionsContainer');
+            container.innerHTML = '';
+            
+            currentPaper.questions.forEach((q, index) => {
+                const qDiv = document.createElement('div');
+                qDiv.className = 'bg-white rounded-xl card-shadow p-6 question-card';
+                
+                let typeText = '';
+                let inputHtml = '';
+                
+                switch(q.type) {
+                    case 'single':
+                        typeText = '单选题';
+                        inputHtml = q.options.map((opt, i) => `
+                            <label class="flex items-center p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                                <input type="radio" name="q${index}" value="${String.fromCharCode(65+i)}" class="mr-3 text-primary focus:ring-primary" onchange="saveAnswer(${index}, this.value)">
+                                <span>${opt}</span>
+                            </label>
+                        `).join('');
+                        break;
+                    case 'fill':
+                        typeText = '填空题';
+                        inputHtml = `
+                            <input type="text" class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-primary focus:border-primary outline-none" placeholder="请输入答案" onblur="saveAnswer(${index}, this.value)">
+                        `;
+                        break;
+                    case 'judge':
+                        typeText = '判断题';
+                        inputHtml = `
+                            <div class="flex space-x-4">
+                                <label class="flex items-center p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                                    <input type="radio" name="q${index}" value="正确" class="mr-3 text-success focus:ring-success" onchange="saveAnswer(${index}, this.value)">
+                                    <span class="text-success">正确</span>
+                                </label>
+                                <label class="flex items-center p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                                    <input type="radio" name="q${index}" value="错误" class="mr-3 text-danger focus:ring-danger" onchange="saveAnswer(${index}, this.value)">
+                                    <span class="text-danger">错误</span>
+                                </label>
+                            </div>
+                        `;
+                        break;
+                    case 'short':
+                        typeText = '简答题';
+                        inputHtml = `
+                            <textarea class="w-full h-32 border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-primary focus:border-primary outline-none" placeholder="请输入答案（自动批改仅提供参考答案）" onblur="saveAnswer(${index}, this.value)"></textarea>
+                        `;
+                        break;
+                    case 'comprehensive':
+                        typeText = '综合题';
+                        inputHtml = `
+                            <textarea class="w-full h-48 border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-primary focus:border-primary outline-none font-mono text-sm" placeholder="请输入代码/答案（自动批改仅提供参考答案）" onblur="saveAnswer(${index}, this.value)"></textarea>
+                        `;
+                        break;
+                }
+                
+                qDiv.innerHTML = `
+                    <div class="flex items-start justify-between mb-4">
+                        <div>
+                            <span class="inline-block px-2 py-1 bg-primary/10 text-primary text-xs rounded mb-2">${typeText}（${q.score}分）</span>
+                            <p class="text-dark font-medium">${q.question}</p>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        ${inputHtml}
+                    </div>
+                `;
+                
+                container.appendChild(qDiv);
+            });
+        }
+
+        // 保存答案
+        function saveAnswer(index, value) {
+            userAnswers[index] = value.trim();
+        }
+
+        // 计时器
+        function startTimer() {
+            startTime = Date.now();
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        function updateTimer() {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const hours = Math.floor(elapsed / 3600).toString().padStart(2, '0');
+            const minutes = Math.floor((elapsed % 3600) / 60).toString().padStart(2, '0');
+            const seconds = (elapsed % 60).toString().padStart(2, '0');
+            document.getElementById('timer').textContent = `${hours}:${minutes}:${seconds}`;
+        }
+
+        // 提交试卷
+        function submitExam() {
+            // 弹出确认模态框
+            document.getElementById('submitModal').classList.remove('hidden');
+        }
+        
+        function closeSubmitModal() {
+            document.getElementById('submitModal').classList.add('hidden');
+        }
+        
+        function confirmSubmit() {
+            closeSubmitModal();
+            
+            clearInterval(timerInterval);
+            
+            // 计算成绩
+            let totalScore = 0;
+            let correct = 0;
+            let wrong = 0;
+            const details = [];
+            
+            currentPaper.questions.forEach((q, index) => {
+                const userAns = userAnswers[index] || '';
+                const isCorrect = checkAnswer(q, userAns);
+                
+                if (q.type === 'single' || q.type === 'fill' || q.type === 'judge') {
+                    if (isCorrect) {
+                        totalScore += q.score;
+                        correct++;
+                    } else {
+                        wrong++;
+                    }
+                }
+                
+                details.push({
+                    question: q.question,
+                    type: q.type,
+                    userAnswer: userAns || '未作答',
+                    correctAnswer: q.answer,
+                    isCorrect: isCorrect,
+                    score: q.score,
+                    gotScore: isCorrect ? q.score : 0
+                });
+            });
+            
+            // 显示结果
+            showResult(totalScore, correct, wrong, details);
+        }
+
+        // 检查答案
+        function checkAnswer(question, userAns) {
+            if (!userAns) return false;
+            
+            const correctAns = question.answer.toString().trim().toLowerCase();
+            const user = userAns.toString().trim().toLowerCase();
+            
+            // 客观题精确匹配
+            if (question.type === 'single' || question.type === 'judge') {
+                return user === correctAns;
+            }
+            // 填空题模糊匹配
+            if (question.type === 'fill') {
+                return user.includes(correctAns) || correctAns.includes(user);
+            }
+            // 主观题不自动评分，仅提供参考
+            return null;
+        }
+
+        // 显示结果
+        function showResult(totalScore, correct, wrong, details) {
+            document.getElementById('examPage').classList.add('hidden');
+            document.getElementById('resultPage').classList.remove('hidden');
+            
+            const total = currentPaper.questions.length;
+            const accuracy = total > 0 ? Math.round((correct / (correct + wrong)) * 100) : 0;
+            
+            document.getElementById('totalScore').textContent = totalScore;
+            document.getElementById('correctCount').textContent = correct;
+            document.getElementById('wrongCount').textContent = wrong;
+            document.getElementById('accuracy').textContent = accuracy + '%';
+            
+            // 渲染详情
+            const container = document.getElementById('resultDetails');
+            container.innerHTML = '';
+            
+            details.forEach((d, index) => {
+                const div = document.createElement('div');
+                div.className = `p-4 rounded-lg border ${d.isCorrect ? 'border-success/30 bg-success/5' : d.isCorrect === null ? 'border-warning/30 bg-warning/5' : 'border-danger/30 bg-danger/5'}`;
+                
+                let statusHtml = '';
+                if (d.isCorrect === true) {
+                    statusHtml = '<span class="text-success"><i class="fa fa-check-circle mr-1"></i>正确</span>';
+                } else if (d.isCorrect === false) {
+                    statusHtml = '<span class="text-danger"><i class="fa fa-times-circle mr-1"></i>错误</span>';
+                } else {
+                    statusHtml = '<span class="text-warning"><i class="fa fa-info-circle mr-1"></i>主观题（仅供参考）</span>';
+                }
+                
+                div.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="font-medium text-dark">第${index+1}题</span>
+                        ${statusHtml}
+                    </div>
+                    <p class="text-sm text-gray-600 mb-2">${d.question}</p>
+                    <div class="text-sm space-y-1">
+                        <p><span class="text-gray-500">你的答案：</span>${d.userAnswer}</p>
+                        <p><span class="text-gray-500">正确答案：</span>${d.correctAnswer}</p>
+                        <p class="text-right text-gray-500">得分：${d.gotScore}/${d.score}分</p>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // 返回首页
+        function backToHome() {
+            document.getElementById('homePage').classList.remove('hidden');
+            document.getElementById('examPage').classList.add('hidden');
+            document.getElementById('resultPage').classList.add('hidden');
+            clearInterval(timerInterval);
+        }
+
+        // 当前激活的标签页
+        let activeTab = 'json';
+        let parsedWordQuestions = [];
+
+        // 标签页切换
+        function switchTab(tab) {
+            activeTab = tab;
+            if (tab === 'json') {
+                document.getElementById('jsonPanel').classList.remove('hidden');
+                document.getElementById('wordPanel').classList.add('hidden');
+                document.getElementById('tabJson').classList.add('text-primary', 'border-b-2', 'border-primary');
+                document.getElementById('tabJson').classList.remove('text-gray-500');
+                document.getElementById('tabWord').classList.remove('text-primary', 'border-b-2', 'border-primary');
+                document.getElementById('tabWord').classList.add('text-gray-500');
+            } else {
+                document.getElementById('jsonPanel').classList.add('hidden');
+                document.getElementById('wordPanel').classList.remove('hidden');
+                document.getElementById('tabWord').classList.add('text-primary', 'border-b-2', 'border-primary');
+                document.getElementById('tabWord').classList.remove('text-gray-500');
+                document.getElementById('tabJson').classList.remove('text-primary', 'border-b-2', 'border-primary');
+                document.getElementById('tabJson').classList.add('text-gray-500');
+            }
+        }
+
+        // 导入题库模态框
+        function openImportModal() {
+            document.getElementById('importModal').classList.remove('hidden');
+            switchTab('json');
+            parsedWordQuestions = [];
+        }
+
+        function closeImportModal() {
+            document.getElementById('importModal').classList.add('hidden');
+            document.getElementById('jsonInput').value = '';
+            document.getElementById('wordSubject').value = '';
+            document.getElementById('wordPaper').value = '';
+            document.getElementById('fileStatus').textContent = '点击选择.docx文件';
+            parsedWordQuestions = [];
+        }
+
+        // 处理Word文件上传
+        function handleWordFile(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            document.getElementById('fileStatus').textContent = '正在解析：' + file.name + '...';
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                mammoth.extractRawText({arrayBuffer: e.target.result})
+                    .then(function(result) {
+                        const text = result.value;
+                        parsedWordQuestions = parseWordText(text);
+                        document.getElementById('fileStatus').textContent = `解析完成！共识别 ${parsedWordQuestions.length} 道题目`;
+                    })
+                    .catch(function(err) {
+                        document.getElementById('fileStatus').textContent = '解析失败：' + err.message;
+                        alert('Word文件解析失败，请确保是标准的.docx格式');
+                    });
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // 解析Word文本为题目
+                function parseWordText(text) {
+            // 预处理：展开制表符分隔的选项
+            text = text.replace(/\t/g, '\n');
+            const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+            const questions = [];
+            
+            const typeMap = {
+                '单选': 'single', '单选题': 'single', '选择': 'single', '选择题': 'single',
+                '填空': 'fill', '填空题': 'fill',
+                '判断': 'judge', '判断题': 'judge',
+                '简答': 'short', '简答题': 'short',
+                '综合': 'comprehensive', '综合题': 'comprehensive', '综合应用': 'comprehensive',
+                '算法': 'comprehensive', '算法设计': 'comprehensive', '编程': 'comprehensive'
+            };
+            
+            const scoreMap = {'single':2, 'fill':2, 'judge':1, 'short':5, 'comprehensive':10};
+            
+            let currentType = null;
+            let currentQuestion = null;
+            let currentOptions = [];
+            let currentAnswer = null;
+            let currentScore = 0;
+            let isCollectingAnswer = false;
+            let hasAnswer = false;
+            
+            const answerKeywords = ['答案：', '答案:', '参考答案：', '参考答案:', '正确答案：', '正确答案:', '参考回答：', '参考回答:'];
+            
+            function isAnswerLine(line) {
+                for (let kw of answerKeywords) {
+                    if (line.startsWith(kw)) return true;
+                }
+                return false;
+            }
+            
+            function extractAnswer(line) {
+                for (let kw of answerKeywords) {
+                    if (line.startsWith(kw)) {
+                        return line.substring(kw.length).trim();
+                    }
+                }
+                return line;
+            }
+            
+            function saveQuestion() {
+                if (currentQuestion && currentType) {
+                    // 处理判断题：从题目末尾提取答案
+                    if (currentType === 'judge') {
+                        const judgePattern = /[（(]\s*([TtFf√×对错])\s*[）)]/;
+                        const match = currentQuestion.match(judgePattern);
+                        if (match) {
+                            const ans = match[1].toUpperCase();
+                            if (ans === 'T' || ans === '√' || ans === '对') {
+                                currentAnswer = '正确';
+                            } else if (ans === 'F' || ans === '×' || ans === '错') {
+                                currentAnswer = '错误';
+                            }
+                            // 从题目中移除答案部分
+                            currentQuestion = currentQuestion.replace(judgePattern, '').trim();
+                        }
+                    }
+                    
+                    // 处理填空题：尝试从题目中提取答案（下划线格式）
+                    if (currentType === 'fill' && !currentAnswer) {
+                        const underscorePattern = /_+([^_]+)_+/g;
+                        const matches = [...currentQuestion.matchAll(underscorePattern)];
+                        if (matches.length > 0) {
+                            const answerParts = matches.map(m => m[1].trim()).filter(m => m);
+                            if (answerParts.length > 0) {
+                                currentAnswer = answerParts.join('；');
+                            }
+                        }
+                    }
+                    
+                    questions.push({
+                        type: currentType,
+                        question: currentQuestion,
+                        options: currentType === 'single' ? currentOptions : [],
+                        answer: currentAnswer || '',
+                        score: currentScore || scoreMap[currentType]
+                    });
+                }
+                currentQuestion = null;
+                currentOptions = [];
+                currentAnswer = null;
+                isCollectingAnswer = false;
+                hasAnswer = false;
+            }
+            
+            function isNumberedQuestion(line) {
+                if (/^\d+[、.．]/.test(line) && !/^[A-D][、.．]/.test(line)) {
+                    if (line.length < 5) return false;
+                    return true;
+                }
+                return false;
+            }
+            
+            function isOptionLine(line) {
+                return /^[A-D][、.．]/.test(line);
+            }
+            
+            function isSectionHeader(line) {
+                // 检测题型标题：中文数字+题型名（支持有顿号和无顿号）
+                if (/^[一二三四五六七八九十]+[、]?/.test(line)) {
+                    for (let name of Object.keys(typeMap)) {
+                        if (line.includes(name)) {
+                            return { isHeader: true, typeCode: typeMap[name] };
+                        }
+                    }
+                }
+                
+                // 检测短标题（如：1.单选）
+                if (line.length < 20) {
+                    for (let name of Object.keys(typeMap)) {
+                        if (line.startsWith(name) || new RegExp('^\\d+[.．、]\\s*' + name).test(line)) {
+                            return { isHeader: true, typeCode: typeMap[name] };
+                        }
+                    }
+                }
+                
+                return { isHeader: false, typeCode: null };
+            }
+            
+            for (let line of lines) {
+                // 检测题型标题
+                const headerResult = isSectionHeader(line);
+                if (headerResult.isHeader) {
+                    saveQuestion();
+                    currentType = headerResult.typeCode;
+                    
+                    const scoreMatch = line.match(/(\d+)分/);
+                    currentScore = scoreMatch ? parseInt(scoreMatch[1]) : scoreMap[currentType] || 2;
+                    
+                    continue;
+                }
+                
+                // 简答题/综合题特殊处理
+                if (currentType === 'short' || currentType === 'comprehensive') {
+                    if (isNumberedQuestion(line)) {
+                        if (currentQuestion) {
+                            saveQuestion();
+                        }
+                        currentQuestion = line.replace(/^\d+[、.．]\s*/, '');
+                        currentAnswer = null;
+                        hasAnswer = false;
+                        isCollectingAnswer = true;
+                        continue;
+                    }
+                    
+                    if (isAnswerLine(line) && !currentAnswer) {
+                        currentAnswer = extractAnswer(line);
+                        hasAnswer = true;
+                        continue;
+                    }
+                    
+                    if (currentQuestion && isCollectingAnswer) {
+                        if (currentAnswer) {
+                            currentAnswer += '\n' + line;
+                        } else {
+                            currentAnswer = line;
+                        }
+                        hasAnswer = true;
+                        continue;
+                    }
+                    
+                    continue;
+                }
+                
+                // 检测答案行
+                if (isAnswerLine(line)) {
+                    currentAnswer = extractAnswer(line);
+                    hasAnswer = true;
+                    if (currentType === 'short' || currentType === 'comprehensive') {
+                        isCollectingAnswer = true;
+                    } else {
+                        isCollectingAnswer = false;
+                    }
+                    continue;
+                }
+                
+                // 收集多行答案
+                if (isCollectingAnswer && currentType && (currentType === 'short' || currentType === 'comprehensive')) {
+                    if (isNumberedQuestion(line) || isOptionLine(line)) {
+                        isCollectingAnswer = false;
+                    } else {
+                        if (currentAnswer) {
+                            currentAnswer += '\n' + line;
+                        } else {
+                            currentAnswer = line;
+                        }
+                        continue;
+                    }
+                }
+                
+                // 检测编号题目
+                if (isNumberedQuestion(line)) {
+                    saveQuestion();
+                    currentQuestion = line.replace(/^\d+[、.．]\s*/, '');
+                    isCollectingAnswer = false;
+                    hasAnswer = false;
+                    continue;
+                }
+                
+                // 检测选项行（单选题）
+                if (currentType === 'single' && isOptionLine(line)) {
+                    currentOptions.push(line);
+                    continue;
+                }
+                
+                // 无编号题目检测（填空题、判断题）
+                if (currentType && !isCollectingAnswer) {
+                    if (hasAnswer && currentQuestion && !isAnswerLine(line) && !isOptionLine(line)) {
+                        if (currentType === 'fill' || currentType === 'judge') {
+                            saveQuestion();
+                            currentQuestion = line;
+                            hasAnswer = false;
+                            continue;
+                        }
+                    }
+                    
+                    if (!currentQuestion && !isAnswerLine(line) && line.length > 5) {
+                        if (!isOptionLine(line)) {
+                            currentQuestion = line;
+                            continue;
+                        }
+                    }
+                }
+                
+                // 题目续行
+                if (currentQuestion && !isCollectingAnswer) {
+                    if (!isOptionLine(line) && !isAnswerLine(line)) {
+                        currentQuestion += '\n' + line;
+                    }
+                }
+            }
+            
+            saveQuestion();
+            
+            return questions;
+        }
+
+        // 统一导入函数
+        function doImport() {
+            if (activeTab === 'json') {
+                importJsonBank();
+            } else {
+                importWordBank();
+            }
+        }
+
+        // 导入JSON题库
+        function importJsonBank() {
+            const jsonStr = document.getElementById('jsonInput').value.trim();
+            if (!jsonStr) {
+                alert('请输入题库内容');
+                return;
+            }
+            
+            try {
+                const bank = JSON.parse(jsonStr);
+                addBankToSystem(bank);
+            } catch (e) {
+                alert('导入失败：' + e.message + '，请检查JSON格式是否正确');
+            }
+        }
+
+        // 导入Word题库
+        function importWordBank() {
+            const subject = document.getElementById('wordSubject').value.trim() || '自定义学科';
+            const paper = document.getElementById('wordPaper').value.trim() || '试卷一';
+            
+            if (parsedWordQuestions.length === 0) {
+                alert('请先选择并解析Word文件');
+                return;
+            }
+            
+            const bank = {
+                subject: subject,
+                papers: [
+                    {
+                        title: paper,
+                        totalScore: 100,
+                        questions: parsedWordQuestions
+                    }
+                ]
+            };
+            
+            addBankToSystem(bank);
+        
+            // 导入后重新去重统计
+            deduplicateAllQuestions();
+}
+
+        // 添加题库到系统
+        function addBankToSystem(bank) {
+            if (!bank.subject || !bank.papers || !Array.isArray(bank.papers)) {
+                throw new Error('题库格式不正确');
+            }
+            
+            questionBanks.push(bank);
+            
+            // 添加到学科列表
+            const subjectList = document.getElementById('subjectList');
+            const newCard = document.createElement('div');
+            newCard.className = 'bg-white rounded-xl card-shadow p-6 question-card';
+            newCard.innerHTML = `
+                <div class="flex items-center mb-4">
+                    <div class="w-12 h-12 bg-success/10 rounded-lg flex items-center justify-center mr-4">
+                        <i class="fa fa-book text-success text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-dark">${bank.subject}</h3>
+                        <p class="text-sm text-gray-500">${bank.papers.length}套试卷</p>
+                    </div>
+                </div>
+                <p class="text-gray-600 text-sm mb-4">导入的自定义题库，支持在线答题和自动批改</p>
+                <div class="flex justify-between items-center">
+                    <span class="text-xs text-gray-500">题目总数：${bank.papers.reduce((sum, p) => sum + p.questions.length, 0)}题</span>
+                    <div class="flex space-x-2">
+                        <button onclick="deleteBank('${bank.subject}')" class="px-3 py-1 border border-danger text-danger rounded-lg hover:bg-danger/5 transition-colors text-sm">
+                            <i class="fa fa-trash mr-1"></i>删除
+                        </button>
+                        <button onclick="openGenerateModal('${bank.subject}')" class="px-3 py-1 border border-primary text-primary rounded-lg hover:bg-primary/5 transition-colors text-sm">
+                            <i class="fa fa-magic mr-1"></i>智能组卷
+                        </button>
+                        <button onclick="startExam('${bank.subject}')" class="text-primary font-medium hover:text-primary/80 flex items-center">
+                            开始考试 <i class="fa fa-arrow-right ml-1"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            // 插入到添加卡片前面
+            subjectList.insertBefore(newCard, subjectList.lastElementChild);
+            
+            closeImportModal();
+            alert('题库导入成功！共导入 ' + bank.papers.reduce((sum, p) => sum + p.questions.length, 0) + ' 道题目');
+            
+            // 保存到localStorage
+            saveBanksToStorage();
+        }
+
+        // ========== 智能组卷功能 ==========
+        let currentGenerateSubject = null;
+
+        // 打开组卷模态框
+        function openGenerateModal(subject) {
+            currentGenerateSubject = subject;
+            const bank = subject === 'java' ? defaultBank : questionBanks.find(b => b.subject === subject);
+            
+            // 合并所有题目
+            const allQuestions = bank.papers.flatMap(p => p.questions);
+            
+            // 统计各题型数量（总题数）
+            const stats = {
+                single: allQuestions.filter(q => q.type === 'single').length,
+                fill: allQuestions.filter(q => q.type === 'fill').length,
+                judge: allQuestions.filter(q => q.type === 'judge').length,
+                short: allQuestions.filter(q => q.type === 'short').length,
+                comprehensive: allQuestions.filter(q => q.type === 'comprehensive').length
+            };
+            
+            document.getElementById('statSingle').textContent = stats.single;
+            document.getElementById('statFill').textContent = stats.fill;
+            document.getElementById('statJudge').textContent = stats.judge;
+            document.getElementById('statShort').textContent = stats.short;
+            document.getElementById('statComprehensive').textContent = stats.comprehensive;
+            
+            // 计算去重后的题目数量
+            const contentSet = new Set();
+            const dedupQuestions = [];
+            allQuestions.forEach(q => {
+                const pureText = q.question.replace(/^\d+[、.．]\s*/, '').trim();
+                if (!contentSet.has(pureText)) {
+                    contentSet.add(pureText);
+                    dedupQuestions.push(q);
+                }
+            });
+            
+            // 统计去重后各题型数量
+            const dedupStats = {
+                single: dedupQuestions.filter(q => q.type === 'single').length,
+                fill: dedupQuestions.filter(q => q.type === 'fill').length,
+                judge: dedupQuestions.filter(q => q.type === 'judge').length,
+                short: dedupQuestions.filter(q => q.type === 'short').length,
+                comprehensive: dedupQuestions.filter(q => q.type === 'comprehensive').length
+            };
+            
+            // 设置去重后统计
+            document.getElementById('dedupSingle').textContent = dedupStats.single;
+            document.getElementById('dedupFill').textContent = dedupStats.fill;
+            document.getElementById('dedupJudge').textContent = dedupStats.judge;
+            document.getElementById('dedupShort').textContent = dedupStats.short;
+            document.getElementById('dedupComprehensive').textContent = dedupStats.comprehensive;
+            
+            // 设置去重后总数
+            const dedupTotal = dedupStats.single + dedupStats.fill + dedupStats.judge + dedupStats.short + dedupStats.comprehensive;
+            document.getElementById('dedupTotal').textContent = dedupTotal;
+            
+            // 设置最大值（使用去重后的数量，因为组卷从去重题库中抽题）
+            document.getElementById('genSingle').max = dedupStats.single;
+            document.getElementById('genFill').max = dedupStats.fill;
+            document.getElementById('genJudge').max = dedupStats.judge;
+            document.getElementById('genShort').max = dedupStats.short;
+            document.getElementById('genComprehensive').max = dedupStats.comprehensive;
+            
+            // 计算预计总分
+            updateExpectedScore();
+            
+            // 自动计算最优分配（确保不超过题库实际题量）
+            autoAllocateQuestions();
+            
+            document.getElementById('generateModal').classList.remove('hidden');
+        }
+
+        function closeGenerateModal() {
+            document.getElementById('generateModal').classList.add('hidden');
+            currentGenerateSubject = null;
+        }
+
+        // 更新学科卡片显示
+        function updateBankCard(subject) {
+            const bank = subject === 'java' ? defaultBank : questionBanks.find(b => b.subject === subject);
+            if (!bank) return;
+            
+            // 找到对应的卡片
+            const cards = document.querySelectorAll('.question-card');
+            let targetCard = null;
+            cards.forEach(card => {
+                const title = card.querySelector('h3');
+                if (title && title.textContent === subject) {
+                    targetCard = card;
+                }
+            });
+            
+            if (targetCard) {
+                // 更新试卷数量
+                const paperCount = targetCard.querySelector('.text-sm.text-gray-500');
+                if (paperCount) {
+                    paperCount.textContent = bank.papers.length + '套试卷';
+                }
+                
+                // 更新题目总数
+                const totalQ = bank.papers.reduce((sum, p) => sum + p.questions.length, 0);
+                const totalSpan = targetCard.querySelector('.text-xs.text-gray-500');
+                if (totalSpan) {
+                    totalSpan.textContent = '题目总数：' + totalQ + '题';
+                }
+            }
+        }
+
+        // 更新预计总分
+        function updateExpectedScore() {
+            const single = parseInt(document.getElementById('genSingle').value) || 0;
+            const fill = parseInt(document.getElementById('genFill').value) || 0;
+            const judge = parseInt(document.getElementById('genJudge').value) || 0;
+            const short = parseInt(document.getElementById('genShort').value) || 0;
+            const comprehensive = parseInt(document.getElementById('genComprehensive').value) || 0;
+            
+            const total = single * 2 + fill * 2 + judge * 1 + short * 5 + comprehensive * 10;
+            document.getElementById('expectedScore').textContent = total;
+        }
+
+        // 监听输入变化，实时计算总分
+        ['genSingle', 'genFill', 'genJudge', 'genShort', 'genComprehensive'].forEach(id => {
+            document.addEventListener('input', function(e) {
+                if (e.target.id === id) {
+                    updateExpectedScore();
+                }
+            });
+        });
+
+        // 随机抽题
+        function randomPick(arr, count) {
+            const shuffled = [...arr].sort(() => Math.random() - 0.5);
+            return shuffled.slice(0, count);
+        }
+
+        // 生成试卷
+        function generatePapers() {
+            const bank = currentGenerateSubject === 'java' ? defaultBank : questionBanks.find(b => b.subject === currentGenerateSubject);
+            
+            // 获取配置
+            const config = {
+                single: parseInt(document.getElementById('genSingle').value) || 0,
+                fill: parseInt(document.getElementById('genFill').value) || 0,
+                judge: parseInt(document.getElementById('genJudge').value) || 0,
+                short: parseInt(document.getElementById('genShort').value) || 0,
+                comprehensive: parseInt(document.getElementById('genComprehensive').value) || 0,
+                count: parseInt(document.getElementById('genCount').value) || 3
+            };
+            
+            // 合并所有题目并按题型分类
+            const allQuestions = bank.papers.flatMap(p => p.questions);
+            const questionsByType = {
+                single: allQuestions.filter(q => q.type === 'single'),
+                fill: allQuestions.filter(q => q.type === 'fill'),
+                judge: allQuestions.filter(q => q.type === 'judge'),
+                short: allQuestions.filter(q => q.type === 'short'),
+                comprehensive: allQuestions.filter(q => q.type === 'comprehensive')
+            };
+            
+            // 验证数量是否足够
+            for (let type in config) {
+                if (type !== 'count' && config[type] > questionsByType[type].length) {
+                    alert(`${type === 'single' ? '单选题' : type === 'fill' ? '填空题' : type === 'judge' ? '判断题' : type === 'short' ? '简答题' : '综合题'}数量不足！题库中只有 ${questionsByType[type].length} 题`);
+                    return;
+                }
+            }
+            
+            // 生成多套试卷
+            const newPapers = [];
+            for (let i = 1; i <= config.count; i++) {
+                const paperQuestions = [];
+                
+                // 各题型随机抽题
+                if (config.single > 0) paperQuestions.push(...randomPick(questionsByType.single, config.single));
+                if (config.fill > 0) paperQuestions.push(...randomPick(questionsByType.fill, config.fill));
+                if (config.judge > 0) paperQuestions.push(...randomPick(questionsByType.judge, config.judge));
+                if (config.short > 0) paperQuestions.push(...randomPick(questionsByType.short, config.short));
+                if (config.comprehensive > 0) paperQuestions.push(...randomPick(questionsByType.comprehensive, config.comprehensive));
+                
+                newPapers.push({
+                    title: `智能组卷 - 第${i}套`,
+                    totalScore: parseInt(document.getElementById('expectedScore').textContent),
+                    questions: paperQuestions
+                });
+            }
+            
+            // 添加到题库
+            bank.papers = bank.papers.concat(newPapers);
+            
+            // 更新卡片显示
+            updateBankCard(currentGenerateSubject);
+            
+            // 保存到localStorage
+            saveBanksToStorage();
+            
+            alert(`生成成功！已为「${currentGenerateSubject}」生成 ${config.count} 套试卷`);
+            closeGenerateModal();
+        }
+
+        // ========== 数据导出/导入功能 ==========
+        let importedData = null;
+
+        // 导出数据
+        function exportData() {
+            try {
+                // 只导出自定义题库，不导出默认的Java题库
+                const customBanks = questionBanks.filter(b => b !== defaultBank);
+                
+                if (customBanks.length === 0) {
+                    alert('没有可导出的自定义题库数据');
+                    return;
+                }
+                
+                const dataStr = JSON.stringify(customBanks, null, 2);
+                const blob = new Blob([dataStr], {type: 'application/json'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                
+                // 文件名包含日期
+                const date = new Date().toISOString().split('T')[0];
+                a.download = `exam-system-data-${date}.json`;
+                
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                alert(`数据导出成功！共导出 ${customBanks.length} 个题库`);
+            } catch (e) {
+                alert('导出失败：' + e.message);
+            }
+        }
+
+        // 打开数据导入模态框
+        function openDataImportModal() {
+            document.getElementById('dataImportModal').classList.remove('hidden');
+            importedData = null;
+        }
+
+        // 关闭数据导入模态框
+        function closeDataImportModal() {
+            document.getElementById('dataImportModal').classList.add('hidden');
+            document.getElementById('dataFile').value = '';
+            document.getElementById('dataFileStatus').textContent = '点击选择JSON文件';
+            importedData = null;
+        }
+
+        // 处理数据文件选择
+        function handleDataFile(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            document.getElementById('dataFileStatus').textContent = '正在读取：' + file.name + '...';
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (!Array.isArray(data)) {
+                        throw new Error('数据格式不正确，应为题库数组');
+                    }
+                    
+                    // 验证数据格式
+                    let validCount = 0;
+                    data.forEach(bank => {
+                        if (bank.subject && bank.papers && Array.isArray(bank.papers)) {
+                            validCount++;
+                        }
+                    });
+                    
+                    if (validCount === 0) {
+                        throw new Error('没有找到有效的题库数据');
+                    }
+                    
+                    importedData = data;
+                    document.getElementById('dataFileStatus').textContent = `读取成功！共 ${validCount} 个有效题库`;
+                } catch (err) {
+                    document.getElementById('dataFileStatus').textContent = '读取失败：' + err.message;
+                    alert('数据文件解析失败，请确保是标准的JSON格式题库文件');
+                    importedData = null;
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // 执行数据导入
+        function doDataImport() {
+            if (!importedData || importedData.length === 0) {
+                alert('请先选择有效的数据文件');
+                return;
+            }
+            
+            let importCount = 0;
+            let overwriteCount = 0;
+            
+            importedData.forEach(bank => {
+                // 跳过默认Java题库（通过subject名称判断，因为导入的数据是序列化后的，不是同一个引用）
+                if (bank.subject === defaultBank.subject) return;
+                
+                // 验证格式
+                if (!bank.subject || !bank.papers || !Array.isArray(bank.papers)) {
+                    return;
+                }
+                
+                // 检查是否已存在
+                const index = questionBanks.findIndex(b => b.subject === bank.subject);
+                if (index !== -1) {
+                    // 已存在，覆盖
+                    questionBanks[index] = bank;
+                    overwriteCount++;
+                    
+                    // 更新DOM：移除旧卡片，添加新卡片
+                    const cards = document.querySelectorAll('.question-card');
+                    cards.forEach(card => {
+                        const title = card.querySelector('h3');
+                        if (title && title.textContent === bank.subject) {
+                            card.remove();
+                        }
+                    });
+                    addBankCardToPage(bank);
+                } else {
+                    // 不存在，添加
+                    questionBanks.push(bank);
+                    addBankCardToPage(bank);
+                    importCount++;
+                }
+            });
+            
+            // 保存到localStorage
+            saveBanksToStorage();
+            
+            // 重新执行去重统计
+            deduplicateAllQuestions();
+            
+            closeDataImportModal();
+            
+            let message = `导入成功！`;
+            if (importCount > 0) message += `新增 ${importCount} 个题库`;
+            if (overwriteCount > 0) {
+                if (importCount > 0) message += '，';
+                message += `覆盖 ${overwriteCount} 个已有题库`;
+            }
+            
+            alert(message);
+        }
+
+
+    </script>
+</body>
+</html>
